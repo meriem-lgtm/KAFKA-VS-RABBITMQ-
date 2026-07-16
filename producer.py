@@ -1,12 +1,12 @@
-import pika
+from kafka import KafkaProducer
 import json
 import time
 import random
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-channel = connection.channel()
-
-channel.queue_declare(queue='sensor_queue')
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092',
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
 
 while True:
     data = {
@@ -16,11 +16,7 @@ while True:
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
     }
 
-    channel.basic_publish(
-        exchange='',
-        routing_key='sensor_queue',
-        body=json.dumps(data)
-    )
-
+    producer.send('sensor-data', value=data)
     print("Envoyé :", data)
+
     time.sleep(1)
